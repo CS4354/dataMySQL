@@ -1,5 +1,5 @@
-class States(object):
-    def __init__(self, state_id, state_name):
-        self.state_id = state_id
-        self.state_name = state_name
-        
+from marshmallow import Schema, fields
+
+class States(Schema):
+    state_id = fields.Int()
+    state_name = fields.Str()
