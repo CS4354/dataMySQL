@@ -5,4 +5,4 @@ class Addresses(Schema):
     state_id = fields.Int()
     county_id = fields.Int()
     address_name = fields.String()
-    pollition_date = fields.Date()
+    pollution_date = fields.Date()
