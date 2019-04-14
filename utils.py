@@ -12,15 +12,13 @@ def c(cell):
 def find_unique_state_attributes(data):
     print("find_unique_state_attributes called")
     
-    # Put the entire second column into one array
     state_id_column, state_name_column = [], []
-    for item in data:  
+    for item in data:
+        # Put the entire second column into one array
         state_id_column.append(item[1])
-
-    # Put the entire sixth column into one array
-    for item in data:  
+        # Put the entire sixth column into one array
         state_name_column.append(item[5])
-
+   
     # Only return the unique state ids and state names
     return OrderedDict(
         unique_state_ids=set(state_id_column), 
@@ -35,6 +33,7 @@ def create_pollution_table_rows(data):
     when reading the CSV does not gaurentee this.
     """
     print("find_unique_pollution_attributes called")
+
     table_rows = []
     pk = []
 
@@ -72,7 +71,43 @@ def create_pollution_table_rows(data):
     return table_rows
 
 def find_unique_county_attributes(data):
-    pass
+    print("find_unique_county_attributes called")
+
+    county_ids_column = []
+    county_names_column = []
+    state_ids_column = []
+
+    for item in data:
+        county_ids_column.append(int(item[2]))
+        county_names_column.append(item[6])
+        state_ids_column.append(int(item[1]))
+    
+    return OrderedDict(
+        unique_county_ids=set(county_ids_column),
+        unique_county_names=set(county_names_column), 
+        unique_state_ids=set(state_ids_column),
+    )
 
 def find_unique_address_attributes(data):
-    pass
+    print("find_unique_address_attributes called")
+
+    site_ids_column = []
+    state_ids_column = []
+    county_ids_column = []
+    address_names_column = []
+    pollution_dates_column = []
+
+    for item in data:
+        site_ids_column.append(int(item[3]))
+        state_ids_column.append(int(item[1]))
+        county_ids_column.append(int(item[2]))
+        address_names_column.append(item[4])
+        pollution_dates_column.append(datetime(*list(map(int, item[8].split("-")))))
+    
+    return OrderedDict(
+        unique_site_ids=set(site_ids_column),
+        unique_state_ids=set(state_ids_column),
+        unique_county_ids=set(county_ids_column),
+        unique_address_names=set(address_names_column),
+        unique_pollution_dates=set(pollution_dates_column),
+    )

@@ -1,6 +1,7 @@
 import csv
 import pymysql
 
+from pprint import pprint
 from models import States, Counties, Addresses, Pollutions
 from utils import (
     find_unique_state_attributes, 
@@ -14,8 +15,8 @@ FILENAME = "pollution_us_2000_2016.csv"
 flags = dict(
     make_state_table=False,
     make_pollutions_table=False,
-    make_counties_table=True,
-    make_addresses_table=True,
+    make_counties_table=False,
+    make_addresses_table=False,
 )
 
 states_insertion = "INSERT INTO `States` (`STATEID`, `STATENAME`) VALUES (%s, %s)"
@@ -29,7 +30,7 @@ INSERT INTO `Pollutions` (
 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
 counties_insertion = "INSERT INTO `Counties` (`COUNTYID`, `COUNTYNAME`, `STATEID`) VALUES (%s, %s, %s)"
-addresses_insertion = "INSERT INTO `Addresses` (`SITEID`, `STATEID`, `COUNTYID`, `ADDRESSNAME`, `POLLUTIONDATE`) VALUES (%s, %s, %s, %s, %s, %s)"
+addresses_insertion = "INSERT INTO `Addresses` (`SITEID`, `STATEID`, `COUNTYID`, `ADDRESSNAME`, `POLLUTIONDATE`) VALUES (%s, %s, %s, %s, %s)"
 
 def main():
     counter = 1
@@ -43,6 +44,7 @@ def main():
             if i == 0:
                 print(row)
                 continue
+            
             # Read row only if counter is 1
             if counter != 1:
                 counter += 1
@@ -53,8 +55,6 @@ def main():
             # When we finish a group of 3, reset to 1
             if counter == 4:
                 counter = 1
-
-    # address_data = find_unique_address_attributes(data)
 
     with connection.cursor() as cursor:
         if flags["make_state_table"]:
@@ -76,11 +76,26 @@ def main():
         if flags["make_counties_table"]:
             # Create Counties table
             county_data = find_unique_county_attributes(data)
-            for data in county_data:
-                a = Addresses().dump(data)
-                values = tuple([a.data[key] for key in data.keys()])
-                cursor.execute(addresses_insertion, values)
+            for county_id, county_name, state_id in zip(county_data["unique_county_ids"], county_data["unique_county_names"], county_data["unique_state_ids"]):
+                data = dict(county_id=county_id, county_name=county_name, state_id=state_id)
+                c = Counties().dump(data)
+                cursor.execute(counties_insertion, (c.data["county_id"], c.data["county_name"], c.data["state_id"]))
+        
+        if flags["make_addresses_table"]:
+            # Create Addresses table
+            address_data = find_unique_address_attributes(data)
+            data_iters = (
+                address_data["unique_site_ids"], address_data["unique_state_ids"], 
+                address_data["unique_county_ids"], address_data["unique_address_names"], 
+                address_data["unique_pollution_dates"], 
+            )
 
+            for site_id, state_id, county_id, address_name, pollution_date in zip(*data_iters):
+                data = dict(site_id=site_id, state_id=state_id, county_id=county_id, address_name=address_name, pollution_date=pollution_date)
+                a = Addresses().dump(data)
+                values = (a.data["site_id"], a.data["state_id"], a.data["county_id"], a.data["address_name"], a.data["pollution_date"])
+                cursor.execute(addresses_insertion, values)
+        
         connection.close()
 
 
