@@ -1,5 +1,17 @@
+from datetime import datetime
+from collections import OrderedDict
+
+def c(cell):
+    """
+    clean annoying cell values
+    """
+    if " " in cell or cell == "":
+        cell = -1 # Unknown or corrupt value
+    return int(float(cell))
 
 def find_unique_state_attributes(data):
+    print("find_unique_state_attributes called")
+    
     # Put the entire second column into one array
     state_id_column, state_name_column = [], []
     for item in data:  
@@ -10,86 +22,54 @@ def find_unique_state_attributes(data):
         state_name_column.append(item[5])
 
     # Only return the unique state ids and state names
-    return dict(
+    return OrderedDict(
         unique_state_ids=set(state_id_column), 
         unique_state_names=set(state_name_column),
     )
 
-def find_unique_pollution_attributes(data):
+def create_pollution_table_rows(data):
+    """
+    There are 500k+ rows the data list.
+    We only want 1 measurement set for each day.
+    Selecting 1 row and skipping 3 repeatedly
+    when reading the CSV does not gaurentee this.
+    """
     print("find_unique_pollution_attributes called")
-    pollution_date = []
-    no2_mean = []
-    no2_max_value = []
-    no2_max_hour = []
-    no2_aqi = []
-    o3_mean = []
-    o3_max_value = []
-    o3_max_hour = []
-    o3_aqi = []
-    so2_mean = []
-    so2_max_value = []
-    so2_max_hour = []
-    so2_aqi = []
-    CO_mean = []
-    CO_max_value = []
-    CO_max_hour = []
-    CO_aqi = []
+    table_rows = []
+    pk = []
 
     for item in data:
-        pollution_date.append(item[8])
-    for item in data:
-        no2_mean.append(item[10])
-    for item in data:
-        no2_max_value.append(item[11])
-    for item in data:
-        no2_max_hour.append(item[12])
-    for item in data:
-        no2_aqi.append(item[13])
-    for item in data:
-        o3_mean.append(item[15])
-    for item in data:
-        o3_max_value.append(item[16])
-    for item in data:
-        o3_max_hour.append(item[17])
-    for item in data:
-        o3_aqi.append(item[18])
-    for item in data:
-        so2_mean.append(item[20])
-    for item in data:
-        so2_max_value.append(item[21])
-    for item in data:
-        so2_max_hour.append(item[22])
-    for item in data:
-        so2_aqi.append(item[23])
-    for item in data:
-        CO_mean.append(item[25])
-    for item in data:
-        CO_max_value.append(item[26])
-    for item in data:
-        CO_max_hour.append(item[27])
-    for item in data:
-        CO_aqi.append(item[28])
+        # Make sure we only take 1 of each date
+        primary_key = item[8]
+        if primary_key in pk:
+            continue
+        else:
+            # Track the dates we find to make sure there is only one of each day
+            pk.append(primary_key)
 
-
-    return dict(
-        pollution_date=list(set(pollution_date)),
-        no2_mean=list(set(no2_mean)),
-        no2_max_value=list(set(no2_max_value)),
-        no2_max_hour=list(set(no2_max_hour)),
-        no2_aqi=list(set(no2_aqi)),
-        o3_mean=list(set(o3_mean)),
-        o3_max_value=list(set(o3_max_value)),
-        o3_max_hour=list(set(o3_max_hour)),
-        o3_aqi=list(set(o3_aqi)),
-        so2_mean=list(set(so2_mean)),
-        so2_max_value=list(set(so2_max_value)),
-        so2_max_hour=list(set(so2_max_hour)),
-        so2_aqi=list(set(so2_aqi)),
-        CO_mean=list(set(CO_mean)),
-        CO_max_value=list(set(CO_max_value)),
-        CO_max_hour=list(set(CO_max_hour)),
-        CO_aqi=list(set(CO_aqi)),
-    )
+            # Dump the row into a dictionary to make it easier for Schema object
+            row = OrderedDict(
+                    pollution_date=datetime(*list(map(int, primary_key.split("-")))),
+                    no2_mean=item[10],
+                    no2_max_value=c(item[11]),
+                    no2_max_hour=item[12],
+                    no2_aqi=item[13],
+                    o3_mean=item[15],
+                    o3_max_value=c(item[16]),
+                    o3_max_hour=item[17],
+                    o3_aqi=item[18],
+                    so2_mean=item[20],
+                    so2_max_value=c(item[21]),
+                    so2_max_hour=item[22],
+                    so2_aqi=c(item[23]),
+                    CO_mean=item[25],
+                    CO_max_value=c(item[26]),
+                    CO_max_hour=item[27],
+                    CO_aqi=c(item[28]),
+                )
+            table_rows.append(row)
+    
+    return table_rows
 
 def find_unique_county_attributes(data):
     pass
