@@ -5,4 +5,5 @@ class Addresses(Schema):
     state_id = fields.Int()
     county_id = fields.Int()
     address_name = fields.String()
-    pollution_date = fields.Date()
+    latitude = fields.Float()
+    longitude = fields.Float()
