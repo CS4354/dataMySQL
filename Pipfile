@@ -9,6 +9,7 @@ verify_ssl = true
 marshmallow = "*"
 pymysql = "*"
 flask = "*"
+geocoder = "*"
 
 [requires]
 python_version = "3.7"

@@ -12,8 +12,8 @@ cur = db.cursor(pymysql.cursors.DictCursor)
 @app.route("/<int:year>", methods=["GET"])
 def year(year):
     """Return all pollution items for a given year"""
-    # Look up year in database
-    pass
+    print(year)
+    return "asd", 200
 
 
 @app.errorhandler(404)

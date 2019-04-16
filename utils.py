@@ -1,5 +1,33 @@
-from datetime import datetime
+
+import os
+import sys
+
 from collections import OrderedDict
+from datetime import datetime
+from pprint import pprint
+
+import geocoder
+
+def get_latlng(address):
+    """
+    Given an address, return the latitude and longitude
+
+    Make sure MAPQUEST_API_KEY is set
+    """
+    print("querying mapquest for", address)
+
+    try:
+        result = geocoder.mapquest(
+            address, key=os.environ.get("MAPQUEST_API_KEY")
+        ).json
+    except Exception as e:
+        print(e)
+        # Exit if a match can't be found
+        sys.exit(1)
+    
+    result = (result["lat"], result["lng"])
+    print("found", result)
+    return result
 
 def c(cell):
     """
@@ -9,21 +37,21 @@ def c(cell):
         cell = -1 # Unknown or corrupt value
     return int(float(cell))
 
-def find_unique_state_attributes(data):
-    print("find_unique_state_attributes called")
+def create_states_table_rows(data):
+    print("create_states_table_rows called")
     
-    state_id_column, state_name_column = [], []
+    table_rows = []
+    pk = []
     for item in data:
-        # Put the entire second column into one array
-        state_id_column.append(item[1])
-        # Put the entire sixth column into one array
-        state_name_column.append(item[5])
-   
-    # Only return the unique state ids and state names
-    return OrderedDict(
-        unique_state_ids=set(state_id_column), 
-        unique_state_names=set(state_name_column),
-    )
+        # Extract primary key from row
+        state_id = item[1]
+
+        # Only use row if primary key has not already been seen
+        if state_id not in pk:
+            pk.append(state_id)
+            table_rows.append((state_id, item[5]))
+    
+    return table_rows
 
 def create_pollution_table_rows(data):
     """
@@ -32,11 +60,10 @@ def create_pollution_table_rows(data):
     Selecting 1 row and skipping 3 repeatedly
     when reading the CSV does not gaurentee this.
     """
-    print("find_unique_pollution_attributes called")
+    print("create_pollution_table_rows called")
 
     table_rows = []
     pk = []
-
     for item in data:
         # Make sure we only take 1 of each date
         primary_key = item[8]
@@ -49,6 +76,7 @@ def create_pollution_table_rows(data):
             # Dump the row into a dictionary to make it easier for Schema object
             row = OrderedDict(
                     pollution_date=datetime(*list(map(int, primary_key.split("-")))),
+                    site_id=int(item[3]),
                     no2_mean=item[10],
                     no2_max_value=c(item[11]),
                     no2_max_hour=item[12],
@@ -70,44 +98,42 @@ def create_pollution_table_rows(data):
     
     return table_rows
 
-def find_unique_county_attributes(data):
-    print("find_unique_county_attributes called")
+def create_counties_table_rows(data):
+    print("create_counties_table_rows called")
 
-    county_ids_column = []
-    county_names_column = []
-    state_ids_column = []
-
+    table_rows = []
+    pk = []
     for item in data:
-        county_ids_column.append(int(item[2]))
-        county_names_column.append(item[6])
-        state_ids_column.append(int(item[1]))
+        # Extract primary key from row
+        county_id = int(item[2])
+        if county_id not in pk:
+            pk.append(county_id)
+            table_rows.append((county_id, item[6], int(item[1])))
     
-    return OrderedDict(
-        unique_county_ids=set(county_ids_column),
-        unique_county_names=set(county_names_column), 
-        unique_state_ids=set(state_ids_column),
-    )
+    return table_rows
 
-def find_unique_address_attributes(data):
-    print("find_unique_address_attributes called")
+def create_addresses_table_rows(data):
+    print("create_addresses_table_rows called")
 
-    site_ids_column = []
-    state_ids_column = []
-    county_ids_column = []
-    address_names_column = []
-    pollution_dates_column = []
-
+    table_rows = []
+    pk = []
     for item in data:
-        site_ids_column.append(int(item[3]))
-        state_ids_column.append(int(item[1]))
-        county_ids_column.append(int(item[2]))
-        address_names_column.append(item[4])
-        pollution_dates_column.append(datetime(*list(map(int, item[8].split("-")))))
+        site_id = int(item[3])
+        if site_id not in pk:
+            pk.append(site_id)
+            address = item[4]
+            lat, lng = get_latlng(address)
+            data = (
+                site_id,
+                int(item[1]),
+                int(item[2]),
+                address,
+                float(lat),
+                float(lng),
+            )
+            table_rows.append(data)
     
-    return OrderedDict(
-        unique_site_ids=set(site_ids_column),
-        unique_state_ids=set(state_ids_column),
-        unique_county_ids=set(county_ids_column),
-        unique_address_names=set(address_names_column),
-        unique_pollution_dates=set(pollution_dates_column),
-    )
+    return table_rows
+
+if __name__ == "__main__":
+    print(get_latlng("Lubbock, TX"))
