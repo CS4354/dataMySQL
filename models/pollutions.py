@@ -2,6 +2,7 @@ from marshmallow import Schema, fields
 
 class Pollutions(Schema):
     pollution_date = fields.Date()
+    site_id = fields.Int()
     no2_mean = fields.Float()
     no2_max_value = fields.Int()
     no2_max_hour = fields.Int()
